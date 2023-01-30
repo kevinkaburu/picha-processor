@@ -1,6 +1,8 @@
 import sys
 import os
 import boto3
+import urllib
+import numpy as np
 import cv2
 from dotenv import load_dotenv
 
@@ -63,7 +65,9 @@ def create_presigned_url(bucket_name, object_name, expiration=3600):
 
 def processImage(url,uploadID,uploadName):
     # Load the image
-    image = cv2.imread(url)
+    req = urllib.urlopen(url)
+    arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
+    image = cv2.imdecode(arr, -1) # 'Load it as it is'
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Load the face detection model
