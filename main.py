@@ -27,6 +27,13 @@ def imageProcessor(uploadID):
     Userdir ="{}".format(uploadID)
     bucket_name = os.getenv("bucket_name")
     bucket = s3.Bucket(bucket_name)
+    #create directory
+    dirpath = Path('processed/') / '{}'.format(uploadID)
+    dirpath.mkdir(parents=True, exist_ok=True)
+    dirpath = Path('processed/') / '{}/zip'.format(uploadID)
+    dirpath.mkdir(parents=True, exist_ok=True)
+
+    #create zip file
     zipObj = ZipFile('processed/{}/zip/{}.zip'.format(uploadID,uploadID), 'w')
 
     print('Objects:')
