@@ -82,19 +82,19 @@ def processImage(url,uploadID,uploadName):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Load the face detection model
-    face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
 
     # Detect faces in the image
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
 
-    # Check if only one face is present in the image
-    print("Number of faces detected: ", len(faces))
-    if len(faces) < 1:
-        print("Error: Atlease one face must be present in the image")
-        exit()
-    elif len(faces) > 2:
-        print("Error: Only one face must be present in the image")
-        exit()
+    # # Check if only one face is present in the image
+    # print("Number of faces detected: ", len(faces))
+    # if len(faces) < 1:
+    #     print("Error: Atlease one face must be present in the image")
+    #     exit()
+    # elif len(faces) > 2:
+    #     print("Error: Only one face must be present in the image")
+    #     exit()
 
 
     # Crop the image around the face
