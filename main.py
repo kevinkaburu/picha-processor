@@ -41,7 +41,7 @@ def imageProcessor(uploadID):
     zipObj.close()
     #upload zip to s3
     s3.meta.client.upload_file('processed/{}/zip/{}.zip'.format(uploadID,uploadID), bucket_name, 'zip/{}.zip'.format(uploadID))
-    dirpath = Path('dataset3') / 'dataset'
+    dirpath = Path('processed/') / '{}'.format(uploadID)
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
 
