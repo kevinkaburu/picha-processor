@@ -8,6 +8,7 @@ jmespath==1.0.1
 MarkupSafe==2.1.2
 numpy==1.24.1
 opencv-python==4.7.0.68
+Pillow==9.4.0
 python-dateutil==2.8.2
 python-dotenv==0.21.1
 s3transfer==0.6.0
