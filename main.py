@@ -1,5 +1,6 @@
 import sys
 import os
+from zipfile import ZipFile
 import boto3
 import urllib.request as ur
 import numpy as np
@@ -7,6 +8,8 @@ import cv2
 import io
 from PIL import Image
 from pillow_heif import register_heif_opener
+from pathlib import Path
+import shutil
 
 
 from dotenv import load_dotenv
@@ -24,6 +27,7 @@ def imageProcessor(uploadID):
     Userdir ="{}".format(uploadID)
     bucket_name = os.getenv("bucket_name")
     bucket = s3.Bucket(bucket_name)
+    zipObj = ZipFile('processed/{}/zip/{}.zip'.format(uploadID,uploadID), 'w')
 
     print('Objects:')
     for item in bucket.objects.filter(Prefix=Userdir):
@@ -31,8 +35,16 @@ def imageProcessor(uploadID):
         #uploadName = item.key get strign after /
         uploadName = item.key.split("/", 1)[1]
         print("bucket: {}| file: {}| Name: {}| url:{}".format(bucket_name,item.key,uploadName,url))
-        processImage(url,uploadID,uploadName)
+        processImage(url,uploadID,uploadName, zipObj)
         print('\n ', url)
+
+    zipObj.close()
+    #upload zip to s3
+    s3.meta.client.upload_file('processed/{}/zip/{}.zip'.format(uploadID,uploadID), bucket_name, 'zip/{}.zip'.format(uploadID))
+    dirpath = Path('dataset3') / 'dataset'
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
+
 
     
 
@@ -68,7 +80,7 @@ def create_presigned_url(bucket_name, object_name, expiration=3600):
     return response
 
 
-def processImage(url,uploadID,uploadName):
+def processImage(url,uploadID,uploadName,zipObj):
     # Load the image
     req = ur.urlopen(url)
     f = io.BytesIO(req.read())
@@ -82,43 +94,15 @@ def processImage(url,uploadID,uploadName):
     cv2_img = np.array(pilimage)
     image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
 
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # Load the face detection model
-    face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
-
-    # Detect faces in the image
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-
-    # # Check if only one face is present in the image
-    # print("Number of faces detected: ", len(faces))
-    # if len(faces) < 1:
-    #     print("Error: Atlease one face must be present in the image")
-    #     exit()
-    # elif len(faces) > 2:
-    #     print("Error: Only one face must be present in the image")
-    #     exit()
-
-
-    # Crop the image around the face
-    for (x, y, w, h) in faces:
-        face_img = image[y:y+h, x:x+w]
-        face_center_x, face_center_y = (x + w/2, y + h/2)
-        x_offset, y_offset = (256 - face_center_x, 256 - face_center_y)
-        y_coord = max(y_offset, 0)
-        x_coord = max(x_offset, 0)
-        face_img = image[y_coord:y_coord+512, x_coord:x_coord+512]
-        face_area = w*h
-        total_area = 512*512
-        if (face_area/total_area) < 0.35:
-           face_img = cv2.resize(face_img, (int(w*1.2), int(h*1.2)))
-           face_img = face_img[int(h*0.1):int(h*1.1), int(w*0.1):int(w*1.1)]
-
     # Resize the image to 512x512 pixels
-    resized_img = cv2.resize(face_img, (512, 512))
+    resized_img = cv2.resize(image, (512, 512))
 
     # Save the resized image as PNG
-    cv2.imwrite("processed/{}/{}.png".format(uploadID,uploadName), resized_img)
+    #upload name remove extension
+    uploadName = uploadName.split(".", 1)[0]
+    newPng ="processed/{}/{}.png".format(uploadID,uploadName)
+    cv2.imwrite(newPng, resized_img)
+    zipObj.write(newPng)
 
 
 if __name__ == "__main__":
