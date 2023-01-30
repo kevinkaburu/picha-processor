@@ -4,6 +4,9 @@ import boto3
 import urllib.request as ur
 import numpy as np
 import cv2
+import io
+from PIL import Image
+
 from dotenv import load_dotenv
 
 
@@ -66,7 +69,14 @@ def create_presigned_url(bucket_name, object_name, expiration=3600):
 def processImage(url,uploadID,uploadName):
     # Load the image
     req = ur.urlopen(url)
-    arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
+    f = io.BytesIO(req.read())
+    pilimage = Image.open(f)
+    print("Mode: ", pilimage.mode)
+    if pilimage.mode != "RGB":
+        pilimage = pilimage.convert("RGB")
+
+
+    arr =np.array(pilimage)
     image = cv2.imdecode(arr, -1) # 'Load it as it is'
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
