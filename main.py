@@ -1,7 +1,7 @@
 import sys
 import os
 import boto3
-#import cv2
+import cv2
 from dotenv import load_dotenv
 
 
@@ -105,6 +105,5 @@ def processImage(url,uploadID,uploadName):
 
 if __name__ == "__main__":
     load_dotenv()
-    # Only for debugging while developing
     #main.py 16
     imageProcessor(sys.argv[1])
