@@ -6,6 +6,8 @@ import numpy as np
 import cv2
 import io
 from PIL import Image
+from pillow_heif import register_heif_opener
+
 
 from dotenv import load_dotenv
 
@@ -70,6 +72,7 @@ def processImage(url,uploadID,uploadName):
     # Load the image
     req = ur.urlopen(url)
     f = io.BytesIO(req.read())
+    register_heif_opener()
     pilimage = Image.open(f)
     print("Mode: ", pilimage.mode)
     if pilimage.mode != "RGB":
