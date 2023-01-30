@@ -75,9 +75,10 @@ def processImage(url,uploadID,uploadName):
     if pilimage.mode != "RGB":
         pilimage = pilimage.convert("RGB")
 
+    
+    cv2_img = np.array(pilimage)
+    image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
 
-    arr =np.array(pilimage)
-    image = cv2.imdecode(arr, -1) # 'Load it as it is'
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Load the face detection model
