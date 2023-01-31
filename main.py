@@ -54,7 +54,7 @@ def imageProcessor(uploadID):
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
     #update database
-    bucket_url = create_presigned_url(bucket_name, 'zip/{}.zip'.format(uploadID),13150000)
+    bucket_url = create_presigned_url(bucket_name, 'zip/{}.zip'.format(uploadID),(604800-1))
     updateDatabase(uploadID, bucket_url)
 
 
