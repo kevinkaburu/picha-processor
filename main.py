@@ -10,6 +10,8 @@ from PIL import Image
 from pillow_heif import register_heif_opener
 from pathlib import Path
 import shutil
+import mysql.connector
+
 
 
 from dotenv import load_dotenv
@@ -51,6 +53,9 @@ def imageProcessor(uploadID):
     dirpath = Path('processed/') / '{}'.format(uploadID)
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
+    #update database
+    bucket_url = create_presigned_url(bucket_name, 'zip/{}.zip'.format(uploadID),13150000)
+    updateDatabase(uploadID, bucket_url)
 
 
     
@@ -110,6 +115,21 @@ def processImage(url,uploadID,uploadName,zipObj):
     newPng ="processed/{}/{}.png".format(uploadID,uploadName)
     cv2.imwrite(newPng, resized_img)
     zipObj.write(newPng)
+
+#update database set table upload bucket_url to zip file 
+def updateDatabase(uploadID, bucket_url):   
+    mydb = mysql.connector.connect(
+    host=os.getenv("host"),
+    user=os.getenv("user"),
+    password=os.getenv("password"),
+    database=os.getenv("database")
+    )
+    #update database
+    mycursor = mydb.cursor()
+    sql = "UPDATE upload SET bucket_url = %s, status=5 WHERE upload_id = %s"
+    mycursor.execute(sql, (bucket_url, uploadID))
+    mydb.commit()
+    print(mycursor.rowcount, "record(s) affected")
 
 
 if __name__ == "__main__":
