@@ -135,7 +135,8 @@ def processImage(url,uploadID,uploadName,zipObj):
         cropped_image = image[y1:y2, x1:x2]
     else:
         # If no faces are detected, crop the image to a square centered around the center of the image
-        cropped_image = image
+        print("No faces detected")
+        return
 
     resized_img = cv2.resize(cropped_image, (256, 256), interpolation=cv2.INTER_AREA)
 
