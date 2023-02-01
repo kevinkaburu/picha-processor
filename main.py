@@ -114,7 +114,7 @@ def processImage(url,uploadID,uploadName,zipObj):
     face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
     eye_cascade = cv2.CascadeClassifier(os.getenv("eye_cascade"))
 
-    faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.2, minNeighbors=6, minSize=(40, 40), maxSize=(150, 150))
+    faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.05, minNeighbors=5, minSize=(30, 30))
     print("Found {} faces!".format(len(faces)))
     if len(faces) > 0:
         largest_face = max(faces, key=lambda x: x[2] * x[3])
