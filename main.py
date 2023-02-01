@@ -115,16 +115,27 @@ def processImage(url,uploadID,uploadName,zipObj):
     faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     if len(faces) > 0:
         largest_face = max(faces, key=lambda x: x[2] * x[3])
-        x, y, w, h = largest_face
-        cropped_image = image[y:y + h, x:x + w]
+        #get coordinates of largest face
+        x1 = largest_face.left()
+        y1 = largest_face.top()
+        x2 = largest_face.right()
+        y2 = largest_face.bottom()
+        # Add more space to the top, bottom, left and right of the face
+        space = 0.35
+        x1 -= int(space * (x2 - x1))
+        x2 += int(space * (x2 - x1))
+        y1 -= int(space * (y2 - y1))
+        y2 += int(space * (y2 - y1))
+        # Ensure that the cropped area stays within the bounds of the image
+        x1 = max(0, x1)
+        y1 = max(0, y1)
+        x2 = min(image.shape[1], x2)
+        y2 = min(image.shape[0], y2)
+        # Crop the image
+        cropped_image = image[y1:y2, x1:x2]
     else:
         # If no faces are detected, crop the image to a square centered around the center of the image
-        h, w = image.shape[:2]
-        center = (w // 2, h // 2)
-        side_length = min(h, w)
-        x = center[0] - side_length // 2
-        y = center[1] - side_length // 2
-        cropped_image = image[y:y + side_length, x:x + side_length]
+        cropped_image = image
 
     resized_img = cv2.resize(cropped_image, (256, 256), interpolation=cv2.INTER_AREA)
 
@@ -133,7 +144,7 @@ def processImage(url,uploadID,uploadName,zipObj):
     uploadName = uploadName.split(".", 1)[0]
     newPng ="processed/{}/{}.png".format(uploadID,uploadName)
     cv2.imwrite(newPng, resized_img)
-    zipObj.write(newPng)
+    zipObj.write(newPng, arcname="{}.png".format(uploadName))
 
 #update database set table upload bucket_url to zip file 
 def updateDatabase(uploadID, bucket_url):   
