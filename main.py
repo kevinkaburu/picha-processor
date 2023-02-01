@@ -116,10 +116,9 @@ def processImage(url,uploadID,uploadName,zipObj):
     if len(faces) > 0:
         largest_face = max(faces, key=lambda x: x[2] * x[3])
         #get coordinates of largest face
-        x1 = largest_face.left()
-        y1 = largest_face.top()
-        x2 = largest_face.right()
-        y2 = largest_face.bottom()
+        x1, y1, w, h = largest_face
+        x2 = x1 + w
+        y2 = y1 + h
         # Add more space to the top, bottom, left and right of the face
         space = 0.35
         x1 -= int(space * (x2 - x1))
