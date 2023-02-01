@@ -120,11 +120,12 @@ def processImage(url,uploadID,uploadName,zipObj):
         x2 = x1 + w
         y2 = y1 + h
         # Add more space to the top, bottom, left and right of the face
-        space = 0.35
-        x1 -= int(space * (x2 - x1))
-        x2 += int(space * (x2 - x1))
-        y1 -= int(space * (y2 - y1))
-        y2 += int(space * (y2 - y1))
+        space1 = 0.35
+        space2 = 0.45
+        x1 -= int(space1 * (x2 - x1))
+        x2 += int(space2 * (x2 - x1))
+        y1 -= int(space1 * (y2 - y1))
+        y2 += int(space2 * (y2 - y1))
         # Ensure that the cropped area stays within the bounds of the image
         x1 = max(0, x1)
         y1 = max(0, y1)
