@@ -36,7 +36,7 @@ def imageProcessor(uploadID):
     dirpath.mkdir(parents=True, exist_ok=True)
 
     #create zip file
-    zipObj = ZipFile('processed/{}/zip/{}.zip'.format(uploadID,uploadID), 'w')
+    zipObj = ZipFile('{}.zip'.format(uploadID), 'w')
 
     print('Objects:')
     for item in bucket.objects.filter(Prefix=Userdir):
@@ -49,10 +49,13 @@ def imageProcessor(uploadID):
 
     zipObj.close()
     #upload zip to s3
-    s3.meta.client.upload_file('processed/{}/zip/{}.zip'.format(uploadID,uploadID), bucket_name, 'zip/{}.zip'.format(uploadID))
+    s3.meta.client.upload_file('{}.zip'.format(uploadID), bucket_name, 'zip/{}.zip'.format(uploadID))
+    #delete directory
     dirpath = Path('processed/') / '{}'.format(uploadID)
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
+    #delete zip file
+    os.remove('{}.zip'.format(uploadID))
     #update database
     bucket_url = create_presigned_url(bucket_name, 'zip/{}.zip'.format(uploadID),(604800-1))
     updateDatabase(uploadID, bucket_url)
@@ -101,13 +104,29 @@ def processImage(url,uploadID,uploadName,zipObj):
     print("Mode: ", pilimage.mode)
     if pilimage.mode != "RGB":
         pilimage = pilimage.convert("RGB")
-
+    
     
     cv2_img = np.array(pilimage)
     image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # Resize the image to 512x512 pixels
-    resized_img = cv2.resize(image, (512, 512))
+    # Use a cascading classifier to detect objects within the image
+    face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
+    faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    if len(faces) > 0:
+        largest_face = max(faces, key=lambda x: x[2] * x[3])
+        x, y, w, h = largest_face
+        cropped_image = image[y:y + h, x:x + w]
+    else:
+        # If no faces are detected, crop the image to a square centered around the center of the image
+        h, w = image.shape[:2]
+        center = (w // 2, h // 2)
+        side_length = min(h, w)
+        x = center[0] - side_length // 2
+        y = center[1] - side_length // 2
+        cropped_image = image[y:y + side_length, x:x + side_length]
+
+    resized_img = cv2.resize(cropped_image, (256, 256), interpolation=cv2.INTER_AREA)
 
     # Save the resized image as PNG
     #upload name remove extension
