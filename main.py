@@ -113,6 +113,7 @@ def processImage(url,uploadID,uploadName,zipObj):
     # Use a cascading classifier to detect objects within the image
     face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
     faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    print("Found {} faces!".format(len(faces)))
     if len(faces) > 0:
         largest_face = max(faces, key=lambda x: x[2] * x[3])
         #get coordinates of largest face
@@ -120,7 +121,7 @@ def processImage(url,uploadID,uploadName,zipObj):
         x2 = x1 + w
         y2 = y1 + h
         # Add more space to the top, bottom, left and right of the face
-        space = 0.4
+        space = 0.36
         x1 -= int(space * (x2 - x1))
         x2 += int(space * (x2 - x1))
         y1 -= int(space * (y2 - y1))
