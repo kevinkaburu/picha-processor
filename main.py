@@ -112,18 +112,11 @@ def processImage(url,uploadID,uploadName,zipObj):
 
     # Use a cascading classifier to detect objects within the image
     face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
-    eye_cascade = cv2.CascadeClassifier(os.getenv("eye_cascade"))
 
-    faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.05, minNeighbors=7, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+    faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.01, minNeighbors=7, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
     print("Found {} faces!".format(len(faces)))
     if len(faces) > 0:
         largest_face = max(faces, key=lambda x: x[2] * x[3])
-        #if no eyes found return
-        eyes = eye_cascade.detectMultiScale(gray_image, scaleFactor=1.2, minNeighbors=5, minSize=(30, 30))
-        print("Found {} eyes!".format(len(eyes)))
-        if len(eyes) == 0:
-            print("No eyes found")
-            return
         #get coordinates of largest face
         x1, y1, w, h = largest_face
         x2 = x1 + w
