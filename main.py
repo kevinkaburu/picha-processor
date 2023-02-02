@@ -38,14 +38,12 @@ def imageProcessor(uploadID):
     #create zip file
     zipObj = ZipFile('{}.zip'.format(uploadID), 'w')
 
-    print('Objects:')
     for item in bucket.objects.filter(Prefix=Userdir):
         url = create_presigned_url(bucket_name, item.key)
         #uploadName = item.key get strign after /
         uploadName = item.key.split("/", 1)[1]
         print("bucket: {}| file: {}| Name: {}| url:{}".format(bucket_name,item.key,uploadName,url))
         processImage(url,uploadID,uploadName, zipObj)
-        print('\n ', url)
 
     zipObj.close()
     #upload zip to s3
@@ -137,7 +135,7 @@ def processImage(url,uploadID,uploadName,zipObj):
         x2 = x1 + w
         y2 = y1 + h
         # Add more space to the top, bottom, left and right of the face
-        space = 0.36
+        space = 0.40
         x1 -= int(space * (x2 - x1))
         x2 += int(space * (x2 - x1))
         y1 -= int(space * (y2 - y1))
@@ -176,7 +174,7 @@ def updateDatabase(uploadID, bucket_url):
     sql = "UPDATE upload SET bucket_url = %s, status=5 WHERE upload_id = %s"
     mycursor.execute(sql, (bucket_url, uploadID))
     mydb.commit()
-    print(mycursor.rowcount, "record(s) affected")
+    print(mycursor.rowcount, "record(s) affected: url: {}".format(bucket_url))
 
 
 if __name__ == "__main__":
