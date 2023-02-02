@@ -114,6 +114,21 @@ def processImage(url,uploadID,uploadName,zipObj):
     face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
 
     faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.05, minNeighbors=8, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+    #load model
+    model = cv2.dnn.readNetFromCaffe(os.getenv("deploy_prototype"), os.getenv("caffe_model"))
+    (h, w) = image.shape[:2]
+    blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
+
+    model.setInput(blob)
+    detections = model.forward()
+    faces = []
+    for i in range(0, detections.shape[2]):
+        confidence = detections[0, 0, i, 2]
+        if confidence > 0.8:
+            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+            (startX, startY, endX, endY) = box.astype("int")
+            faces.append([startX, startY, endX - startX, endY - startY])
+
     print("Found {} faces!".format(len(faces)))
     if len(faces) > 0:
         largest_face = max(faces, key=lambda x: x[2] * x[3])
@@ -139,7 +154,7 @@ def processImage(url,uploadID,uploadName,zipObj):
         print("No faces detected")
         return
 
-    resized_img = cv2.resize(cropped_image, (256, 256), interpolation=cv2.INTER_AREA)
+    resized_img = cv2.resize(cropped_image, (512, 512), interpolation=cv2.INTER_AREA)
 
     # Save the resized image as PNG
     #upload name remove extension
