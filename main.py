@@ -41,7 +41,7 @@ def imageProcessor(uploadID,DBConnection):
         #uploadName = item.key get strign after /
         uploadName = item.key.split("/", 1)[1]
         print("bucket: {}| file: {}| Name: {}| url:{}".format(bucket_name,item.key,uploadName,url))
-        processImage(url,uploadID,uploadName, DBConnection,s3)
+        processImage(url,uploadID,uploadName, DBConnection,bucket_name,s3)
 
     #delete directory
     dirpath = Path('processed/') / '{}'.format(uploadID)
