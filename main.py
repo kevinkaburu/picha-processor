@@ -42,11 +42,6 @@ def imageProcessor(uploadID,DBConnection):
         uploadName = item.key.split("/", 1)[1]
         print("bucket: {}| file: {}| Name: {}| url:{}".format(bucket_name,item.key,uploadName,url))
         processImage(url,uploadID,uploadName, DBConnection,bucket_name,s3)
-
-    #delete directory
-    dirpath = Path('processed/') / '{}'.format(uploadID)
-    if dirpath.exists() and dirpath.is_dir():
-        shutil.rmtree(dirpath)
     # #delete zip file
     # os.remove('{}.zip'.format(uploadID))
     # #update database
@@ -157,7 +152,7 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     #upload to s3
     s3.meta.client.upload_file(newPng, bucket_name, '{}/processed/{}.png'.format(uploadID,uploadName))
     #update DB
-    updateUploadImgDB(uploadID, '{}{}/processed/{}.png'.format(os.getenv('bucket_public_url'),uploadID,uploadName),DBConnection)
+    updateUploadImgDB(uploadName, '{}{}/processed/{}.png'.format(os.getenv('bucket_public_url'),uploadID,uploadName),DBConnection)
 
 #update database set table upload bucket_url to zip file 
 def updateUploadDB(uploadID,DBConnection):   
@@ -189,3 +184,7 @@ if __name__ == "__main__":
     #main.py 16
     imageProcessor(sys.argv[1],mydb)
     mydb.close()
+    #delete directory
+    dirpath = Path('processed/') / '{}'.format(sys.argv[1])
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
