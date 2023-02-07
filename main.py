@@ -178,14 +178,14 @@ if __name__ == "__main__":
     database=os.getenv("database")
     )
 
-    #main.py 16
-    imageProcessor(sys.argv[1],mydb)
+    uploadID = sys.argv[1]
+    imageProcessor(uploadID,mydb)
     mydb.close()
     #delete directory
-    dirpath = Path('processed/') / '{}'.format(sys.argv[1])
+    dirpath = Path('processed/') / '{}'.format(uploadID)
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
     end = time.time()
     #print time taken by uploadID
-    print("Upload ID: {} took: {} ".format(sys.argv[1]), (end - start)   )
+    print("Upload ID: {} took: {} seconds".format(uploadID, end - start))
     
