@@ -171,7 +171,7 @@ def updateUploadDB(uploadID,DBConnection):
 def updateUploadImgDB(uploadID, bucket_url,DBConnection):   
     #update database
     mycursor = DBConnection.cursor()
-    sql = "UPDATE upload_image SET bucket_url = %s, status=5 WHERE upload_image_id = %s"
+    sql = "UPDATE upload_image SET url = %s, status=5 WHERE upload_image_id = %s"
     mycursor.execute(sql, (bucket_url, uploadID))
     DBConnection.commit()
     print(mycursor.rowcount, "record(s) affected: url: {}".format(bucket_url))
