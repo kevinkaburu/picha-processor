@@ -11,6 +11,7 @@ from pillow_heif import register_heif_opener
 from pathlib import Path
 import shutil
 import mysql.connector
+import time
 
 
 
@@ -26,7 +27,7 @@ def imageProcessor(uploadID,DBConnection):
     region_name = os.getenv("region_name")
     )
 
-    Userdir ="{}".format(uploadID)
+    Userdir ="{}/raw".format(uploadID)
     bucket_name = os.getenv("bucket_name")
     bucket = s3.Bucket(bucket_name)
     #create directory
@@ -40,12 +41,8 @@ def imageProcessor(uploadID,DBConnection):
         url = create_presigned_url(bucket_name, item.key)
         #uploadName = item.key get strign after /
         uploadName = item.key.split("/", 1)[1]
-        print("bucket: {}| file: {}| Name: {}| url:{}".format(bucket_name,item.key,uploadName,url))
         processImage(url,uploadID,uploadName, DBConnection,bucket_name,s3)
-    # #delete zip file
-    # os.remove('{}.zip'.format(uploadID))
-    # #update database
-    # bucket_url = create_presigned_url(bucket_name, 'zip/{}.zip'.format(uploadID),(604800-1))
+
     updateUploadDB(uploadID,DBConnection)
 
 
@@ -89,7 +86,7 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     f = io.BytesIO(req.read())
     register_heif_opener()
     pilimage = Image.open(f)
-    print("Mode: ", pilimage.mode)
+    print("UploadID: {} | imageID: {}  Mode:{} ".format(uploadID,uploadName,pilimage.mode))
     if pilimage.mode != "RGB":
         pilimage = pilimage.convert("RGB")
     
@@ -117,7 +114,7 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
             (startX, startY, endX, endY) = box.astype("int")
             faces.append([startX, startY, endX - startX, endY - startY])
 
-    print("Found {} faces!".format(len(faces)))
+    print("UploadID: {} | imageID: {} Found {} faces!".format(uploadID,uploadName,len(faces)))
     if len(faces) > 0:
         largest_face = max(faces, key=lambda x: x[2] * x[3])
         #get coordinates of largest face
@@ -139,7 +136,7 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
         cropped_image = image[y1:y2, x1:x2]
     else:
         # If no faces are detected, crop the image to a square centered around the center of the image
-        print("No faces detected")
+        print("UploadID: {} | imageID: {} No faces detected".format(uploadID,uploadName))
         return
 
     resized_img = cv2.resize(cropped_image, (512, 512), interpolation=cv2.INTER_AREA)
@@ -169,10 +166,11 @@ def updateUploadImgDB(uploadID, bucket_url,DBConnection):
     sql = "UPDATE upload_image SET url = %s, status=5 WHERE upload_image_id = %s"
     mycursor.execute(sql, (bucket_url, uploadID))
     DBConnection.commit()
-    print(mycursor.rowcount, "record(s) affected: url: {}".format(bucket_url))
+    print(mycursor.rowcount, "ImageID:{} record affected: url: {}".format(uploadID,bucket_url))
 
 
 if __name__ == "__main__":
+    start = time.time()
     load_dotenv()
     mydb = mysql.connector.connect(
     host=os.getenv("host"),
@@ -188,3 +186,7 @@ if __name__ == "__main__":
     dirpath = Path('processed/') / '{}'.format(sys.argv[1])
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
+    end = time.time()
+    #print time taken by uploadID
+    print("Upload ID: {} took: {} ".format(sys.argv[1]), (end - start)   )
+    
