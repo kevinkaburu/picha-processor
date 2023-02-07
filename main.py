@@ -38,6 +38,7 @@ def imageProcessor(uploadID,DBConnection):
         url = create_presigned_url(bucket_name, item.key)
         #uploadName = item.key get strign after /
         uploadName = item.key.split("/", 1)[1]
+        print("Processing UploadID: {} | Image: {}".format(uploadID,uploadName))
         processImage(url,uploadID,uploadName, DBConnection,bucket_name,s3)
 
     updateUploadDB(uploadID,DBConnection)
@@ -83,6 +84,8 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     f = io.BytesIO(req.read())
     register_heif_opener()
     pilimage = Image.open(f)
+    uploadName = uploadName.split(".", 1)[0]
+    uploadName = uploadName.split("/", 1)[1]
     print("UploadID: {} | imageID: {}  Mode:{} ".format(uploadID,uploadName,pilimage.mode))
     if pilimage.mode != "RGB":
         pilimage = pilimage.convert("RGB")
@@ -140,8 +143,7 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
 
     # Save the resized image as PNG
     #upload name remove extension
-    uploadName = uploadName.split(".", 1)[0]
-    uploadName = uploadName.split("/", 1)[1]
+  
     newPng ="processed/{}/{}.png".format(uploadID,uploadName)
     cv2.imwrite(newPng, resized_img)
     #upload to s3
@@ -152,8 +154,8 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
 def updateUploadDB(uploadID,DBConnection):   
     #update database
     mycursor = DBConnection.cursor()
-    sql = "UPDATE upload SET status=5 WHERE upload_id = %s"
-    mycursor.execute(sql, ( uploadID))
+    sql = "UPDATE upload SET status=5 WHERE upload_id = {}".format(uploadID)
+    mycursor.execute(sql)
     DBConnection.commit()
 
 #update database set table upload_image bucket_url 
