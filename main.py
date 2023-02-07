@@ -187,5 +187,5 @@ if __name__ == "__main__":
         shutil.rmtree(dirpath)
     end = time.time()
     #print time taken by uploadID
-    print("-----\nUpload ID: {} took: {} seconds".format(uploadID, end - start))
+    print("-----\nUpload ID: {} took: {} mins".format(uploadID, (end - start)/60))
     
