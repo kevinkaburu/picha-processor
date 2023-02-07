@@ -144,6 +144,7 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     # Save the resized image as PNG
     #upload name remove extension
     uploadName = uploadName.split(".", 1)[0]
+    uploadName = uploadName.split("/", 1)[1]
     newPng ="processed/{}/{}.png".format(uploadID,uploadName)
     cv2.imwrite(newPng, resized_img)
     #upload to s3
