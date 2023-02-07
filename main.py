@@ -1,6 +1,5 @@
 import sys
 import os
-from zipfile import ZipFile
 import boto3
 import urllib.request as ur
 import numpy as np
@@ -32,8 +31,6 @@ def imageProcessor(uploadID,DBConnection):
     bucket = s3.Bucket(bucket_name)
     #create directory
     dirpath = Path('processed/') / '{}'.format(uploadID)
-    dirpath.mkdir(parents=True, exist_ok=True)
-    dirpath = Path('processed/') / '{}/zip'.format(uploadID)
     dirpath.mkdir(parents=True, exist_ok=True)
 
 
@@ -152,7 +149,6 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     #update DB
     updateUploadImgDB(uploadName, '{}{}/processed/{}.png'.format(os.getenv('bucket_public_url'),uploadID,uploadName),DBConnection)
 
-#update database set table upload bucket_url to zip file 
 def updateUploadDB(uploadID,DBConnection):   
     #update database
     mycursor = DBConnection.cursor()
