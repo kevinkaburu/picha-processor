@@ -17,7 +17,7 @@ import mysql.connector
 from dotenv import load_dotenv
 
 
-def imageProcessor(uploadID):
+def imageProcessor(uploadID,DBConnection):
     # do something with uploadID
     s3 = boto3.resource('s3',  
     endpoint_url = os.getenv("endpoint_url"),
@@ -35,28 +35,23 @@ def imageProcessor(uploadID):
     dirpath = Path('processed/') / '{}/zip'.format(uploadID)
     dirpath.mkdir(parents=True, exist_ok=True)
 
-    #create zip file
-    zipObj = ZipFile('{}.zip'.format(uploadID), 'w')
 
     for item in bucket.objects.filter(Prefix=Userdir):
         url = create_presigned_url(bucket_name, item.key)
         #uploadName = item.key get strign after /
         uploadName = item.key.split("/", 1)[1]
         print("bucket: {}| file: {}| Name: {}| url:{}".format(bucket_name,item.key,uploadName,url))
-        processImage(url,uploadID,uploadName, zipObj)
+        processImage(url,uploadID,uploadName, DBConnection,s3)
 
-    zipObj.close()
-    #upload zip to s3
-    s3.meta.client.upload_file('{}.zip'.format(uploadID), bucket_name, 'zip/{}.zip'.format(uploadID))
     #delete directory
     dirpath = Path('processed/') / '{}'.format(uploadID)
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
-    #delete zip file
-    os.remove('{}.zip'.format(uploadID))
-    #update database
-    bucket_url = create_presigned_url(bucket_name, 'zip/{}.zip'.format(uploadID),(604800-1))
-    updateDatabase(uploadID, bucket_url)
+    # #delete zip file
+    # os.remove('{}.zip'.format(uploadID))
+    # #update database
+    # bucket_url = create_presigned_url(bucket_name, 'zip/{}.zip'.format(uploadID),(604800-1))
+    updateUploadDB(uploadID,DBConnection)
 
 
     
@@ -93,7 +88,7 @@ def create_presigned_url(bucket_name, object_name, expiration=3600):
     return response
 
 
-def processImage(url,uploadID,uploadName,zipObj):
+def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     # Load the image
     req = ur.urlopen(url)
     f = io.BytesIO(req.read())
@@ -135,7 +130,7 @@ def processImage(url,uploadID,uploadName,zipObj):
         x2 = x1 + w
         y2 = y1 + h
         # Add more space to the top, bottom, left and right of the face
-        space = 0.40
+        space = 0.50
         x1 -= int(space * (x2 - x1))
         x2 += int(space * (x2 - x1))
         y1 -= int(space * (y2 - y1))
@@ -159,25 +154,38 @@ def processImage(url,uploadID,uploadName,zipObj):
     uploadName = uploadName.split(".", 1)[0]
     newPng ="processed/{}/{}.png".format(uploadID,uploadName)
     cv2.imwrite(newPng, resized_img)
-    zipObj.write(newPng, arcname="{}.png".format(uploadName))
+    #upload to s3
+    s3.meta.client.upload_file(newPng, bucket_name, '{}/processed/{}.png'.format(uploadID,uploadName))
+    #update DB
+    updateUploadImgDB(uploadID, '{}{}/processed/{}.png'.format(os.getenv('bucket_public_url'),uploadID,uploadName),DBConnection)
 
 #update database set table upload bucket_url to zip file 
-def updateDatabase(uploadID, bucket_url):   
+def updateUploadDB(uploadID,DBConnection):   
+    #update database
+    mycursor = DBConnection.cursor()
+    sql = "UPDATE upload SET status=5 WHERE upload_id = %s"
+    mycursor.execute(sql, ( uploadID))
+    DBConnection.commit()
+
+#update database set table upload_image bucket_url 
+def updateUploadImgDB(uploadID, bucket_url,DBConnection):   
+    #update database
+    mycursor = DBConnection.cursor()
+    sql = "UPDATE upload_image SET bucket_url = %s, status=5 WHERE upload_image_id = %s"
+    mycursor.execute(sql, (bucket_url, uploadID))
+    DBConnection.commit()
+    print(mycursor.rowcount, "record(s) affected: url: {}".format(bucket_url))
+
+
+if __name__ == "__main__":
+    load_dotenv()
     mydb = mysql.connector.connect(
     host=os.getenv("host"),
     user=os.getenv("user"),
     password=os.getenv("password"),
     database=os.getenv("database")
     )
-    #update database
-    mycursor = mydb.cursor()
-    sql = "UPDATE upload SET bucket_url = %s, status=5 WHERE upload_id = %s"
-    mycursor.execute(sql, (bucket_url, uploadID))
-    mydb.commit()
-    print(mycursor.rowcount, "record(s) affected: url: {}".format(bucket_url))
 
-
-if __name__ == "__main__":
-    load_dotenv()
     #main.py 16
-    imageProcessor(sys.argv[1])
+    imageProcessor(sys.argv[1],mydb)
+    mydb.close()
