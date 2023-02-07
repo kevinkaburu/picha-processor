@@ -169,7 +169,9 @@ def updateUploadImgDB(uploadID, bucket_url,DBConnection):
 
 
 if __name__ == "__main__":
+    uploadID = sys.argv[1]
     start = time.time()
+    print("-----\nStarting uploadID: {}".format(uploadID))
     load_dotenv()
     mydb = mysql.connector.connect(
     host=os.getenv("host"),
@@ -178,7 +180,7 @@ if __name__ == "__main__":
     database=os.getenv("database")
     )
 
-    uploadID = sys.argv[1]
+    
     imageProcessor(uploadID,mydb)
     mydb.close()
     #delete directory
@@ -187,5 +189,5 @@ if __name__ == "__main__":
         shutil.rmtree(dirpath)
     end = time.time()
     #print time taken by uploadID
-    print("-----\nUpload ID: {} took: {} mins".format(uploadID, (end - start)/60))
+    print("-----\nEnd Upload ID: {} took: {} mins".format(uploadID, (end - start)/60))
     
