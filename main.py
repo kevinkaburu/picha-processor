@@ -176,7 +176,7 @@ def updateUploadImgDB(uploadID, bucket_url,DBConnection):
 #init model training
 def initModelTraining(transactionID,uploadID,images,DBConnection):
     #get train_type from database
-    selectTrainType = "SELECT tt.name FROM upload u inner join train_type using(train_type_id) WHERE upload_id = {}".format(uploadID)
+    selectTrainType = "SELECT tt.name FROM upload u inner join train_type tt using(train_type_id) WHERE u.upload_id = {}".format(uploadID)
     mycursor = DBConnection.cursor()
     mycursor.execute(selectTrainType)
     myresult = mycursor.fetchall()
