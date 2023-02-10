@@ -1,7 +1,7 @@
 import sys
 import os
 import boto3
-import urllib.request as ur
+import requests
 import numpy as np
 import cv2
 import io
@@ -207,8 +207,10 @@ def initModelTraining(transactionID,uploadID,images,DBConnection):
     "webhook": "{}".format(os.getenv('model_training_webhook'))
     }
     #send request to model training
-    response = ur.request.post(os.getenv('stablediffusionapi_training_url'), json=payload)
-    print("UploadID: {} | Model training response: {}".format(uploadID,response.text))
+    
+    r = requests.post(os.getenv('stablediffusionapi_training_url'), json=payload)
+    print("UploadID: {} | Model training response: {}".format(uploadID,r.json()))
+    response = r.json()
     #update database
     mycursor = DBConnection.cursor()
     sqlUpdateTransaction = "UPDATE transaction SET status=2 WHERE transaction_id = {}".format(transactionID)
