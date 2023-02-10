@@ -32,6 +32,7 @@ def imageProcessor(uploadID,DBConnection):
     #create directory
     dirpath = Path('processed/') / '{}'.format(uploadID)
     dirpath.mkdir(parents=True, exist_ok=True)
+    PublicUrls = []
 
 
     for item in bucket.objects.filter(Prefix=Userdir):
@@ -39,9 +40,12 @@ def imageProcessor(uploadID,DBConnection):
         #uploadName = item.key get strign after /
         uploadName = item.key.split("/", 1)[1]
         print("Processing UploadID: {} | Image: {}".format(uploadID,uploadName))
-        processImage(url,uploadID,uploadName, DBConnection,bucket_name,s3)
+        processedUrl = processImage(url,uploadID,uploadName, DBConnection,bucket_name,s3)
+        if processedUrl:
+            PublicUrls.append(processedUrl)
 
     updateUploadDB(uploadID,DBConnection)
+    return PublicUrls
 
 
     
@@ -122,7 +126,7 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
         x2 = x1 + w
         y2 = y1 + h
         # Add more space to the top, bottom, left and right of the face
-        space = 0.50
+        space = 0.60
         x1 -= int(space * (x2 - x1))
         x2 += int(space * (x2 - x1))
         y1 -= int(space * (y2 - y1))
@@ -137,7 +141,7 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     else:
         # If no faces are detected, crop the image to a square centered around the center of the image
         print("UploadID: {} | imageID: {} No faces detected".format(uploadID,uploadName))
-        return
+        return None
 
     resized_img = cv2.resize(cropped_image, (512, 512), interpolation=cv2.INTER_AREA)
 
@@ -149,7 +153,9 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     #upload to s3
     s3.meta.client.upload_file(newPng, bucket_name, '{}/processed/{}.png'.format(uploadID,uploadName))
     #update DB
-    updateUploadImgDB(uploadName, '{}{}/processed/{}.png'.format(os.getenv('bucket_public_url'),uploadID,uploadName),DBConnection)
+    publicUrl='{}{}/processed/{}.png'.format(os.getenv('bucket_public_url'),uploadID,uploadName)
+    updateUploadImgDB(uploadName, publicUrl,DBConnection)
+    return publicUrl
 
 def updateUploadDB(uploadID,DBConnection):   
     #update database
@@ -167,9 +173,57 @@ def updateUploadImgDB(uploadID, bucket_url,DBConnection):
     DBConnection.commit()
     print("ImageID:{} update record affected: {} url: {}".format(uploadID,mycursor.rowcount,bucket_url))
 
+#init model training
+def initModelTraining(transactionID,uploadID,images,DBConnection):
+    #get train_type from database
+    selectTrainType = "SELECT tt.name FROM upload u inner join train_type using(train_type_id) WHERE upload_id = {}".format(uploadID)
+    mycursor = DBConnection.cursor()
+    mycursor.execute(selectTrainType)
+    myresult = mycursor.fetchall()
+    train_type = myresult[0][0]
+    #select train_model_id from database
+    selectTrainModel = "SELECT train_model_id FROM transaction WHERE transaction_id= {}".format(transactionID)
+    mycursor.execute(selectTrainModel)
+    myresult = mycursor.fetchall()
+    train_model_id = myresult[0][0]
+    mycursor.close()
+    classType = "man"
+    training_type ="men"
+    if train_type == "Female":
+         training_type ="female"
+         classType = "woman"
+
+
+    #prepare json to send to model training
+    payload ={
+    "key": "{}".format(os.getenv('model_training_key')),
+    "instance_prompt": "sks1",
+    "class_prompt" : "photo of {}".format(classType),
+    "base_model_id" : "realistic-vision-v13",
+    "images": images,
+    "seed": "0",
+    "training_type": "{}".format(training_type),
+    "max_train_steps": "2000",
+    "webhook": "{}".format(os.getenv('model_training_webhook'))
+    }
+    #send request to model training
+    response = ur.request.post(os.getenv('stablediffusionapi_training_url'), json=payload)
+    print("UploadID: {} | Model training response: {}".format(uploadID,response.text))
+    #update database
+    mycursor = DBConnection.cursor()
+    sqlUpdateTransaction = "UPDATE transaction SET status=2 WHERE transaction_id = {}".format(transactionID)
+    mycursor.execute(sqlUpdateTransaction)
+    #update database
+    myother = DBConnection.cursor()
+    sqlUpdateUpload = "UPDATE train_model SET status='{}',external_model_id='{}' WHERE train_model_id = {}".format(response.get('messege'),response.get('training_id'),train_model_id)
+    myother.execute(sqlUpdateUpload)
+    DBConnection.commit()
+    mycursor.close()
+    myother.close()
 
 if __name__ == "__main__":
     uploadID = sys.argv[1]
+    transactionID = sys.argv[2]
     start = time.time()
     print("-----\nStarting uploadID: {}".format(uploadID))
     load_dotenv()
@@ -179,14 +233,17 @@ if __name__ == "__main__":
     password=os.getenv("password"),
     database=os.getenv("database")
     )
-
-    
-    imageProcessor(uploadID,mydb)
-    mydb.close()
-    #delete directory
+    #get upload images
+    fileNames = imageProcessor(uploadID,mydb)
+     #delete directory
     dirpath = Path('processed/') / '{}'.format(uploadID)
     if dirpath.exists() and dirpath.is_dir():
         shutil.rmtree(dirpath)
+    #start model training
+    print("uploadID: {} start model training....\n".format(uploadID))
+    initModelTraining(transactionID,uploadID,fileNames,mydb)
+
+    mydb.close()
     end = time.time()
     #print time taken by uploadID
     print("-----\nEnd Upload ID: {} took: {} mins".format(uploadID, (end - start)/60))
