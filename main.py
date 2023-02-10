@@ -1,8 +1,9 @@
 import sys
 import os
 import boto3
-import requests
+import urllib.request as ur
 import numpy as np
+import requests
 import cv2
 import io
 from PIL import Image
@@ -207,7 +208,6 @@ def initModelTraining(transactionID,uploadID,images,DBConnection):
     "webhook": "{}".format(os.getenv('model_training_webhook'))
     }
     #send request to model training
-    
     r = requests.post(os.getenv('stablediffusionapi_training_url'), json=payload)
     print("UploadID: {} | Model training response: {}".format(uploadID,r.json()))
     response = r.json()
