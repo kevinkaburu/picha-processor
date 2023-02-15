@@ -108,7 +108,7 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     model = cv2.dnn.readNetFromCaffe(os.getenv("deploy_prototype"), os.getenv("caffe_model"))
     (h, w) = image.shape[:2]
     #blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
-    blob = cv2.dnn.blobFromImage(cv2.resize(image, (512, 512)), 1.0, (512, 512), (104.0, 177.0, 123.0))
+    blob = cv2.dnn.blobFromImage(cv2.resize(image, (1024, 1024)), 1.0, (1024, 1024), (104.0, 177.0, 123.0))
 
     model.setInput(blob)
     detections = model.forward()
