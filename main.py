@@ -101,13 +101,14 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Use a cascading classifier to detect objects within the image
-    face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
+    #face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
 
-    faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.05, minNeighbors=8, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+   # faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.05, minNeighbors=8, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
     #load model
     model = cv2.dnn.readNetFromCaffe(os.getenv("deploy_prototype"), os.getenv("caffe_model"))
     (h, w) = image.shape[:2]
-    blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
+    #blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
+    blob = cv2.dnn.blobFromImage(cv2.resize(image, (512, 512)), 1.0, (512, 512), (104.0, 177.0, 123.0))
 
     model.setInput(blob)
     detections = model.forward()
