@@ -95,18 +95,18 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     if pilimage.mode != "RGB":
         print("UploadID: {} | imageID: {}  Converting to RGB".format(uploadID, uploadName))
         pilimage = pilimage.convert("RGB")
+    #resize image
+    print("UploadID: {} | imageID: {}  Resizing image from {}x{}".format(uploadID, uploadName, pilimage.size[0], pilimage.size[1]))
+    #if image is larger than 1024x1024 resize it
+    if pilimage.size[0] > 1024 or pilimage.size[1] > 1024:
+        pilimage.thumbnail((1024, 1024), Image.ANTIALIAS)
+
     cv2_img = np.array(pilimage)
     image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
-
-    # # Use a cascading classifier to detect objects within the image
-    # face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
-    # gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # faces1 = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=8, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
 
     # Use a deep learning model to detect objects within the image
     model = cv2.dnn.readNetFromCaffe(os.getenv("deploy_prototype"), os.getenv("caffe_model"))
     (h, w) = image.shape[:2]
-    #blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300,300), (104.0,177.0,123.0))
     blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300,300), (103.93, 116.77, 123.68)) 
 
     model.setInput(blob)
@@ -154,8 +154,12 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
             cropped_image = image[y1:y2, x1:x2]
             print("UploadID: {} | imageID: {} Cropped image to {}x{} FROM: {}x{}".format(uploadID, uploadName, cropped_image.shape[1], cropped_image.shape[0],image.shape[1], image.shape[0]))
         #return None
-
-    resized_img = cv2.resize(cropped_image, (512, 512), interpolation=cv2.INTER_AREA)
+    #if image is smaller than 512x512 resize to 512x512
+    if image.shape[1] < 512 or image.shape[0] < 512:
+        resized_img = cv2.resize(cropped_image, (512, 512), interpolation=cv2.INTER_AREA)
+    #if image is larger than 512x512 resize to 512x512
+    elif image.shape[1] > 512 or image.shape[0] > 512:
+        resized_img = cv2.resize(cropped_image, (512, 512), interpolation=cv2.INTER_CUBIC)
 
     # Save the resized image as PNG
     #upload name remove extension
