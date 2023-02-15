@@ -93,6 +93,7 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     uploadName = uploadName.split("/", 1)[1]
     print("UploadID: {} | imageID: {}  Mode: {}".format(uploadID, uploadName, pilimage.mode))
     if pilimage.mode != "RGB":
+        print("UploadID: {} | imageID: {}  Converting to RGB".format(uploadID, uploadName))
         pilimage = pilimage.convert("RGB")
     cv2_img = np.array(pilimage)
     image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
@@ -113,17 +114,10 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     faces2 = []
     for i in range(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
-        if confidence > 0.3:
-            print("UploadID: {} | imageID: {}  Confidence: {}".format(uploadID, uploadName, confidence))
         if confidence > 0.5:
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
             (startX, startY, endX, endY) = box.astype("int")
             faces2.append([startX, startY, endX - startX, endY - startY])
-
-    # Combine the results from the two detectors
-    # print("faces1 shape:", faces1.shape)
-    # print("faces2 shape:", faces2[0])
-    # faces = np.concatenate((faces1, faces2), axis=0)
 
     print("UploadID: {} | imageID: {} Found {} faces!".format(uploadID, uploadName, len(faces2)))
     if len(faces2) > 0:
@@ -145,9 +139,20 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
         y2 = min(image.shape[0], y2)
         # Crop the image
         cropped_image = image[y1:y2, x1:x2]
+        print("UploadID: {} | imageID: {} Cropped image to {}x{} FROM: {}x{}".format(uploadID, uploadName, cropped_image.shape[1], cropped_image.shape[0],image.shape[1], image.shape[0]))
+
     else:
         # If no faces are detected, crop the image to a square centered around the center of the image
         print("UploadID: {} | imageID: {} No faces detected".format(uploadID,uploadName))
+        print("UploadID: {} | imageID: {} Image raw: {}x{}".format(uploadID, uploadName, image.shape[1], image.shape[0]))
+        if image.shape[1] > 512 or image.shape[0] > 512:
+            #crop image to 512x512 from center
+            x1 = int((image.shape[1] - 512) / 2)
+            y1 = int((image.shape[0] - 512) / 2)
+            x2 = x1 + 512
+            y2 = y1 + 512
+            cropped_image = image[y1:y2, x1:x2]
+            print("UploadID: {} | imageID: {} Cropped image to {}x{} FROM: {}x{}".format(uploadID, uploadName, cropped_image.shape[1], cropped_image.shape[0],image.shape[1], image.shape[0]))
         return None
 
     resized_img = cv2.resize(cropped_image, (512, 512), interpolation=cv2.INTER_AREA)
