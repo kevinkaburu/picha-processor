@@ -118,7 +118,7 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
 
     # Combine the results from the two detectors
     print("faces1 shape:", faces1.shape)
-    print("faces2 shape:", faces2.shape)
+    print("faces2 shape:", faces2[0].shape)
     faces = np.concatenate((faces1, faces2), axis=0)
 
     print("UploadID: {} | imageID: {} Found {} faces!".format(uploadID, uploadName, len(faces)))
