@@ -102,8 +102,8 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
         pilimage.thumbnail((1024, 1024), Image.LANCZOS)
     #save image to disk
     print("UploadID: {} | imageID: {}  Saving image to disk".format(uploadID, uploadName))
-    pilimage.save("processed/test/{}/{}.png".format(uploadID, uploadName), "png")
-    with open("processed/test/{}/{}-raw.png".format(uploadID, uploadName),'wb') as output:
+    pilimage.save("processed/test/{}.png".format( uploadName), "png")
+    with open("processed/test/{}-raw.png".format( uploadName),'w+b') as output:
         output.write(req.read())
 
     cv2_img = np.array(pilimage)
