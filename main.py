@@ -224,7 +224,7 @@ def initModelTraining(transactionID,uploadID,images,DBConnection):
     "seed": "0",
     "training_type": "{}".format(training_type),
     "max_train_steps": "2000",
-    "webhook": "{}?train_model_id={}".format(os.getenv('model_training_webhook'),train_model_id)
+    "webhook": "{}?transaction_id={}".format(os.getenv('model_training_webhook'),transactionID)
     }
     #send request to model training
     r = requests.post(os.getenv('stablediffusionapi_training_url'), json=payload)
