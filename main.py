@@ -103,13 +103,6 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     #if image is larger than 1024x1024 resize it
     if pilimage.size[0] > 1024 or pilimage.size[1] > 1024:
         pilimage.thumbnail((1024, 1024), Image.LANCZOS)
-    #save image to disk
-    print("UploadID: {} | imageID: {}  Saving image to disk".format(uploadID, uploadName))
-    pilimage.save("processed/test/{}.png".format( uploadName), "png")
-    f.seek(0)
-    with open("processed/test/{}-raw.png".format( uploadName),'wb') as output:
-        output.write(f.getbuffer())
-
     cv2_img = np.array(pilimage)
     image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
 
@@ -135,44 +128,46 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
         x1, y1, w, h = largest_face
         x2 = x1 + w
         y2 = y1 + h
-        # Add more space to the top, bottom, left and right of the face
-        space = 0.60
-        x1 -= int(space * (x2 - x1))
-        x2 += int(space * (x2 - x1))
-        y1 -= int(space * (y2 - y1))
-        y2 += int(space * (y2 - y1))
-        # Ensure that the cropped area stays within the bounds of the image
-        x1 = max(0, x1)
-        y1 = max(0, y1)
-        x2 = min(image.shape[1], x2)
-        y2 = min(image.shape[0], y2)
+        # compute the size of the cropped area required to cover at least 35% of the whole image
+        max_crop_size = min(int(w/0.35), int(h/0.35))
+        # compute the amount of padding to add to the cropped area
+        padding = max_crop_size - w if w > h else max_crop_size - h
+        # Add padding to the cropped area
+        x1 = max(0, x1 - int(padding/2))
+        y1 = max(0, y1 - int(padding/2))
+        x2 = min(image.shape[1], x2 + int(padding/2))
+        y2 = min(image.shape[0], y2 + int(padding/2))
+
+
+
+
+        # # Add more space to the top, bottom, left and right of the face
+        # space = 0.60
+        # x1 -= int(space * (x2 - x1))
+        # x2 += int(space * (x2 - x1))
+        # y1 -= int(space * (y2 - y1))
+        # y2 += int(space * (y2 - y1))
+        # # Ensure that the cropped area stays within the bounds of the image
+        # x1 = max(0, x1)
+        # y1 = max(0, y1)
+        # x2 = min(image.shape[1], x2)
+        # y2 = min(image.shape[0], y2)
         # Crop the image
         cropped_image = image[y1:y2, x1:x2]
         print("UploadID: {} | imageID: {} Cropped image to {}x{} FROM: {}x{}".format(uploadID, uploadName, cropped_image.shape[1], cropped_image.shape[0],image.shape[1], image.shape[0]))
 
     else:
-        # If no faces are detected, crop the image to a square centered around the center of the image
-        print("UploadID: {} | imageID: {} No faces detected".format(uploadID,uploadName))
-        print("UploadID: {} | imageID: {} Image raw: {}x{}".format(uploadID, uploadName, image.shape[1], image.shape[0]))
-        if image.shape[1] > 512 or image.shape[0] > 512:
-            #crop image to 512x512 from center
-            x1 = int((image.shape[1] - 512) / 2)
-            y1 = int((image.shape[0] - 512) / 2)
-            x2 = x1 + 512
-            y2 = y1 + 512
-            cropped_image = image[y1:y2, x1:x2]
-            print("UploadID: {} | imageID: {} Cropped image to {}x{} FROM: {}x{}".format(uploadID, uploadName, cropped_image.shape[1], cropped_image.shape[0],image.shape[1], image.shape[0]))
+            cropped_image = image
         #return None
-    #if image is smaller than 512x512 resize to 512x512
-    if image.shape[1] < 512 or image.shape[0] < 512:
-        resized_img = cv2.resize(cropped_image, (512, 512), interpolation=cv2.INTER_AREA)
-    #if image is larger than 512x512 resize to 512x512
-    elif image.shape[1] > 512 or image.shape[0] > 512:
-        resized_img = cv2.resize(cropped_image, (512, 512), interpolation=cv2.INTER_CUBIC)
+    h, w = cropped_image.shape[:2]
+    min_size = np.amin([h,w])
+
+    # Centralize and crop
+    crop_img = cropped_image[int(h/2-min_size/2):int(h/2+min_size/2), int(w/2-min_size/2):int(w/2+min_size/2)]
+    resized_img = cv2.resize(crop_img, (512, 512), interpolation=cv2.INTER_AREA)
 
     # Save the resized image as PNG
     #upload name remove extension
-  
     newPng ="processed/{}/{}.png".format(uploadID,uploadName)
     cv2.imwrite(newPng, resized_img)
     #upload to s3
