@@ -6,7 +6,7 @@ import numpy as np
 import requests
 import cv2
 import io
-from PIL import Image
+from PIL import Image, ImageOps
 from pillow_heif import register_heif_opener
 from pathlib import Path
 import shutil
@@ -89,6 +89,9 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     f = io.BytesIO(req.read())
     register_heif_opener()
     pilimage = Image.open(f)
+    # take care of rotation
+    pilimage = ImageOps.exif_transpose(pilimage)
+    #get image name
     uploadName = uploadName.split(".", 1)[0]
     uploadName = uploadName.split("/", 1)[1]
     print("UploadID: {} | imageID: {}  Mode: {}".format(uploadID, uploadName, pilimage.mode))
