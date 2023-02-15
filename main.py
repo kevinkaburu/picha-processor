@@ -105,7 +105,9 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     # Use a deep learning model to detect objects within the image
     model = cv2.dnn.readNetFromCaffe(os.getenv("deploy_prototype"), os.getenv("caffe_model"))
     (h, w) = image.shape[:2]
-    blob = cv2.dnn.blobFromImage(cv2.resize(image, (512, 512)), 1.0, (512, 512), (104.0, 177.0, 123.0))
+    #blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300,300), (104.0,177.0,123.0))
+    blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300,300), (103.93, 116.77, 123.68)) 
+
     model.setInput(blob)
     detections = model.forward()
     faces2 = []
@@ -118,7 +120,7 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
 
     # Combine the results from the two detectors
     print("faces1 shape:", faces1.shape)
-    print("faces2 shape:", faces2[0].shape)
+    print("faces2 shape:", faces2[0])
     faces = np.concatenate((faces1, faces2), axis=0)
 
     print("UploadID: {} | imageID: {} Found {} faces!".format(uploadID, uploadName, len(faces)))
