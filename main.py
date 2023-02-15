@@ -153,7 +153,7 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
             y2 = y1 + 512
             cropped_image = image[y1:y2, x1:x2]
             print("UploadID: {} | imageID: {} Cropped image to {}x{} FROM: {}x{}".format(uploadID, uploadName, cropped_image.shape[1], cropped_image.shape[0],image.shape[1], image.shape[0]))
-        return None
+        #return None
 
     resized_img = cv2.resize(cropped_image, (512, 512), interpolation=cv2.INTER_AREA)
 
