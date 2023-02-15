@@ -114,7 +114,7 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     faces = []
     for i in range(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
-        if confidence > 0.8:
+        if confidence > 0.6:
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
             (startX, startY, endX, endY) = box.astype("int")
             faces.append([startX, startY, endX - startX, endY - startY])
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     uploadID = sys.argv[1]
     transactionID = sys.argv[2]
     start = time.time()
-    print("-----\nStarting uploadID: {}".format(uploadID))
+    print("-----\nStarting uploadID: {} transactionID: {}".format(uploadID,transactionID))
     load_dotenv()
     mydb = mysql.connector.connect(
     host=os.getenv("host"),
