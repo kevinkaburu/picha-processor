@@ -97,10 +97,10 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     cv2_img = np.array(pilimage)
     image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
 
-    # Use a cascading classifier to detect objects within the image
-    face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    faces1 = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=8, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+    # # Use a cascading classifier to detect objects within the image
+    # face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
+    # gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # faces1 = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=8, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
 
     # Use a deep learning model to detect objects within the image
     model = cv2.dnn.readNetFromCaffe(os.getenv("deploy_prototype"), os.getenv("caffe_model"))
@@ -119,13 +119,13 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
             faces2.append([startX, startY, endX - startX, endY - startY])
 
     # Combine the results from the two detectors
-    print("faces1 shape:", faces1.shape)
-    print("faces2 shape:", faces2[0])
-    faces = np.concatenate((faces1, faces2), axis=0)
+    # print("faces1 shape:", faces1.shape)
+    # print("faces2 shape:", faces2[0])
+    # faces = np.concatenate((faces1, faces2), axis=0)
 
-    print("UploadID: {} | imageID: {} Found {} faces!".format(uploadID, uploadName, len(faces)))
-    if len(faces) > 0:
-        largest_face = max(faces, key=lambda x: x[2] * x[3])
+    print("UploadID: {} | imageID: {} Found {} faces!".format(uploadID, uploadName, len(faces2)))
+    if len(faces2) > 0:
+        largest_face = max(faces2, key=lambda x: x[2] * x[3])
         #get coordinates of largest face
         x1, y1, w, h = largest_face
         x2 = x1 + w
