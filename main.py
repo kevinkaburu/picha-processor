@@ -99,7 +99,10 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     print("UploadID: {} | imageID: {}  Resizing image from {}x{}".format(uploadID, uploadName, pilimage.size[0], pilimage.size[1]))
     #if image is larger than 1024x1024 resize it
     if pilimage.size[0] > 1024 or pilimage.size[1] > 1024:
-        pilimage.thumbnail((1024, 1024), Image.ANTIALIAS)
+        pilimage.thumbnail((1024, 1024), Image.LANCZOS)
+    #save image to disk
+    print("UploadID: {} | imageID: {}  Saving image to disk".format(uploadID, uploadName))
+    pilimage.save("processed/test/{}/{}.png".format(uploadID, uploadName), "png")
 
     cv2_img = np.array(pilimage)
     image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
@@ -253,9 +256,9 @@ if __name__ == "__main__":
     #get upload images
     fileNames = imageProcessor(uploadID,mydb)
      #delete directory
-    dirpath = Path('processed/') / '{}'.format(uploadID)
-    if dirpath.exists() and dirpath.is_dir():
-        shutil.rmtree(dirpath)
+    # dirpath = Path('processed/') / '{}'.format(uploadID)
+    # if dirpath.exists() and dirpath.is_dir():
+    #     shutil.rmtree(dirpath)
     #start model training
     print("uploadID: {} start model training....\n".format(uploadID))
     initModelTraining(transactionID,uploadID,fileNames,mydb)
