@@ -103,8 +103,9 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     #save image to disk
     print("UploadID: {} | imageID: {}  Saving image to disk".format(uploadID, uploadName))
     pilimage.save("processed/test/{}.png".format( uploadName), "png")
-    with open("processed/test/{}-raw.png".format( uploadName),'w+b') as output:
-        output.write(req.read())
+    f.seek(0)
+    with open("processed/test/{}-raw.png".format( uploadName),'wb') as output:
+        output.write(f.getbuffer())
 
     cv2_img = np.array(pilimage)
     image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
