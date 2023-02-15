@@ -83,7 +83,7 @@ def create_presigned_url(bucket_name, object_name, expiration=3600):
     return response
 
 
-def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
+def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     # Load the image
     req = ur.urlopen(url)
     f = io.BytesIO(req.read())
@@ -91,36 +91,35 @@ def processImage(url,uploadID,uploadName,DBConnection,bucket_name,s3):
     pilimage = Image.open(f)
     uploadName = uploadName.split(".", 1)[0]
     uploadName = uploadName.split("/", 1)[1]
-    print("UploadID: {} | imageID: {}  Mode:{} ".format(uploadID,uploadName,pilimage.mode))
+    print("UploadID: {} | imageID: {}  Mode: {}".format(uploadID, uploadName, pilimage.mode))
     if pilimage.mode != "RGB":
         pilimage = pilimage.convert("RGB")
-    
-    
     cv2_img = np.array(pilimage)
     image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Use a cascading classifier to detect objects within the image
-    #face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
+    face_cascade = cv2.CascadeClassifier(os.getenv("face_cascade"))
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    faces1 = face_cascade.detectMultiScale(gray_image, scaleFactor=1.1, minNeighbors=8, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
 
-   # faces = face_cascade.detectMultiScale(gray_image, scaleFactor=1.05, minNeighbors=8, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
-    #load model
+    # Use a deep learning model to detect objects within the image
     model = cv2.dnn.readNetFromCaffe(os.getenv("deploy_prototype"), os.getenv("caffe_model"))
     (h, w) = image.shape[:2]
-    #blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
-    blob = cv2.dnn.blobFromImage(cv2.resize(image, (1024, 1024)), 1.0, (1024, 1024), (104.0, 177.0, 123.0))
-
+    blob = cv2.dnn.blobFromImage(cv2.resize(image, (512, 512)), 1.0, (512, 512), (104.0, 177.0, 123.0))
     model.setInput(blob)
     detections = model.forward()
-    faces = []
+    faces2 = []
     for i in range(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
         if confidence > 0.6:
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
             (startX, startY, endX, endY) = box.astype("int")
-            faces.append([startX, startY, endX - startX, endY - startY])
+            faces2.append([startX, startY, endX - startX, endY - startY])
 
-    print("UploadID: {} | imageID: {} Found {} faces!".format(uploadID,uploadName,len(faces)))
+    # Combine the results from the two detectors
+    faces = np.concatenate((faces1, faces2), axis=0)
+
+    print("UploadID: {} | imageID: {} Found {} faces!".format(uploadID, uploadName, len(faces)))
     if len(faces) > 0:
         largest_face = max(faces, key=lambda x: x[2] * x[3])
         #get coordinates of largest face
