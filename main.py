@@ -224,7 +224,7 @@ def initModelTraining(transactionID,uploadID,images,DBConnection):
     "seed": "0",
     "training_type": "{}".format(training_type),
     "max_train_steps": "2000",
-    "webhook": "{}".format(os.getenv('model_training_webhook'))
+    "webhook": "{}?train_model_id={}".format(os.getenv('model_training_webhook'),train_model_id)
     }
     #send request to model training
     r = requests.post(os.getenv('stablediffusionapi_training_url'), json=payload)
@@ -257,9 +257,9 @@ if __name__ == "__main__":
     #get upload images
     fileNames = imageProcessor(uploadID,mydb)
      #delete directory
-    # dirpath = Path('processed/') / '{}'.format(uploadID)
-    # if dirpath.exists() and dirpath.is_dir():
-    #     shutil.rmtree(dirpath)
+    dirpath = Path('processed/') / '{}'.format(uploadID)
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
     #start model training
     print("uploadID: {} start model training....\n".format(uploadID))
     initModelTraining(transactionID,uploadID,fileNames,mydb)
