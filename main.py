@@ -113,8 +113,9 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     faces2 = []
     for i in range(0, detections.shape[2]):
         confidence = detections[0, 0, i, 2]
-        print("UploadID: {} | imageID: {}  Confidence: {}".format(uploadID, uploadName, confidence))
-        if confidence > 0.6:
+        if confidence > 0.3:
+            print("UploadID: {} | imageID: {}  Confidence: {}".format(uploadID, uploadName, confidence))
+        if confidence > 0.5:
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
             (startX, startY, endX, endY) = box.astype("int")
             faces2.append([startX, startY, endX - startX, endY - startY])
