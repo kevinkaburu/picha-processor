@@ -219,7 +219,7 @@ def initModelTraining(transactionID,uploadID,images,DBConnection):
     "key": "{}".format(os.getenv('model_training_key')),
     "instance_prompt": "sks1",
     "class_prompt" : "photo of {}".format(classType),
-    "base_model_id" : "realistic-vision-v13",
+    "base_model_id" : "protogen-3.4",
     "images": images,
     "seed": "0",
     "training_type": "{}".format(training_type),
