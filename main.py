@@ -218,8 +218,8 @@ def initModelTraining(transactionID,uploadID,images,DBConnection):
     payload ={
     "key": "{}".format(os.getenv('model_training_key')),
     "instance_prompt": "sks1",
-    "class_prompt" : "photo of {}".format(classType),
-    "base_model_id" : "protogen-3.4",
+    "class_prompt" : "a photo of adhik {}".format(classType),
+    "base_model_id" : "dream-shaper-8797",
     "images": images,
     "seed": "0",
     "training_type": "{}".format(training_type),
