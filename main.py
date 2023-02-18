@@ -219,7 +219,7 @@ def initModelTraining(transactionID,uploadID,images,DBConnection):
     "key": "{}".format(os.getenv('model_training_key')),
     "instance_prompt": "a photo of sks1 {}".format(classType),
     "class_prompt" : "a photo of a {}".format(classType),
-    "base_model_id" : "",
+    "base_model_id" : "null",
     "images": images,
     "seed": "0",
     "training_type": "{}".format(training_type),
