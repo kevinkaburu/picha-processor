@@ -101,7 +101,7 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     #resize image
     print("UploadID: {} | imageID: {}  Resizing image from {}x{}".format(uploadID, uploadName, pilimage.size[0], pilimage.size[1]))
     #if image is larger than 1024x1024 resize it
-    if pilimage.size[0] > 1024 or pilimage.size[1] > 1024:
+    if pilimage.size[0] > 2048 or pilimage.size[1] > 2048:
         pilimage.thumbnail((1024, 1024), Image.LANCZOS)
     cv2_img = np.array(pilimage)
     image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
@@ -129,7 +129,7 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
         x2 = x1 + w
         y2 = y1 + h
         # compute the size of the cropped area required to cover at least 35% of the whole image
-        max_crop_size = min(int(w/0.35), int(h/0.35))
+        max_crop_size = min(int(w/0.40), int(h/0.40))
         # compute the amount of padding to add to the cropped area
         padding = max_crop_size - w if w > h else max_crop_size - h
         # Add padding to the cropped area
@@ -138,27 +138,13 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
         x2 = min(image.shape[1], x2 + int(padding/2))
         y2 = min(image.shape[0], y2 + int(padding/2))
 
-
-
-
-        # # Add more space to the top, bottom, left and right of the face
-        # space = 0.60
-        # x1 -= int(space * (x2 - x1))
-        # x2 += int(space * (x2 - x1))
-        # y1 -= int(space * (y2 - y1))
-        # y2 += int(space * (y2 - y1))
-        # # Ensure that the cropped area stays within the bounds of the image
-        # x1 = max(0, x1)
-        # y1 = max(0, y1)
-        # x2 = min(image.shape[1], x2)
-        # y2 = min(image.shape[0], y2)
         # Crop the image
         cropped_image = image[y1:y2, x1:x2]
         print("UploadID: {} | imageID: {} Cropped image to {}x{} FROM: {}x{}".format(uploadID, uploadName, cropped_image.shape[1], cropped_image.shape[0],image.shape[1], image.shape[0]))
 
     else:
-            cropped_image = image
-        #return None
+        return None
+
     h, w = cropped_image.shape[:2]
     min_size = np.amin([h,w])
 
