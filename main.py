@@ -128,7 +128,7 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
         x1, y1, w, h = largest_face
         x2 = x1 + w
         y2 = y1 + h
-        # compute the size of the cropped area required to cover at least 35% of the whole image
+        # compute the size of the cropped area required to cover at least 40% of the whole image
         max_crop_size = min(int(w/0.40), int(h/0.40))
         # compute the amount of padding to add to the cropped area
         padding = max_crop_size - w if w > h else max_crop_size - h
@@ -193,11 +193,11 @@ def initModelTraining(transactionID,uploadID,images,DBConnection):
     myresult = mycursor.fetchall()
     train_model_id = myresult[0][0]
     mycursor.close()
-    classType = "man"
+    classType = "will smith"
     training_type ="men"
     if train_type == "Female":
          training_type ="female"
-         classType = "woman"
+         classType = "rihanna"
 
 
     #prepare json to send to model training
