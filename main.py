@@ -205,7 +205,7 @@ def initModelTraining(transactionID,uploadID,images,DBConnection):
     "key": "{}".format(os.getenv('model_training_key')),
     "instance_prompt": "sks",
     "class_prompt" : "a photo of {}".format(classType),
-    #"base_model_id" : "",
+    "base_model_id" : "dream-shaper-8797",
     "images": images,
     "seed": "0",
     "training_type": "{}".format(training_type),
