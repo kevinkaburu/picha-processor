@@ -203,8 +203,8 @@ def initModelTraining(transactionID,uploadID,images,DBConnection):
     #prepare json to send to model training
     payload ={
     "key": "{}".format(os.getenv('model_training_key')),
-    "instance_prompt": "a photo of sks1 {}".format(classType),
-    "class_prompt" : "a photo of a {}".format(classType),
+    "instance_prompt": "sks",
+    "class_prompt" : "a photo of {}".format(classType),
     #"base_model_id" : "",
     "images": images,
     "seed": "0",
