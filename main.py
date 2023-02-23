@@ -101,7 +101,7 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     #resize image
     print("UploadID: {} | imageID: {}  Resizing image from {}x{}".format(uploadID, uploadName, pilimage.size[0], pilimage.size[1]))
     #if image is larger than 1024x1024 resize it
-    if pilimage.size[0] > 2048 or pilimage.size[1] > 2048:
+    if pilimage.size[0] > 1024 or pilimage.size[1] > 1024:
         pilimage.thumbnail((1024, 1024), Image.LANCZOS)
     cv2_img = np.array(pilimage)
     image = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2BGR)
@@ -126,20 +126,16 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
         largest_face = max(faces2, key=lambda x: x[2] * x[3])
         #get coordinates of largest face
         x1, y1, w, h = largest_face
-        x2 = x1 + w
-        y2 = y1 + h
-        # compute the size of the cropped area required to cover at least 40% of the whole image
-        max_crop_size = min(int(w/0.40), int(h/0.40))
-        # compute the amount of padding to add to the cropped area
-        padding = max_crop_size - w if w > h else max_crop_size - h
-        # Add padding to the cropped area
-        x1 = max(0, x1 - int(padding/2))
-        y1 = max(0, y1 - int(padding/2))
-        x2 = min(image.shape[1], x2 + int(padding/2))
-        y2 = min(image.shape[0], y2 + int(padding/2))
-
+        center_x = x1 + w // 2
+        center_y = y1 + h // 2
+        #set the dimensions of the crop box
+        crop_size = 512
+        left = max(0, center_x - crop_size // 2)
+        top = max(0, center_y - crop_size // 2)
+        right = min(image.shape[1], center_x + crop_size // 2)
+        bottom = min(image.shape[0], center_y + crop_size // 2)
         # Crop the image
-        cropped_image = image[y1:y2, x1:x2]
+        cropped_image = image[top:bottom, left:right]
         print("UploadID: {} | imageID: {} Cropped image to {}x{} FROM: {}x{}".format(uploadID, uploadName, cropped_image.shape[1], cropped_image.shape[0],image.shape[1], image.shape[0]))
 
     else:
@@ -148,9 +144,9 @@ def processImage(url, uploadID, uploadName, DBConnection, bucket_name, s3):
     h, w = cropped_image.shape[:2]
     min_size = np.amin([h,w])
 
-    # Centralize and crop
-    crop_img = cropped_image[int(h/2-min_size/2):int(h/2+min_size/2), int(w/2-min_size/2):int(w/2+min_size/2)]
-    resized_img = cv2.resize(crop_img, (512, 512), interpolation=cv2.INTER_AREA)
+    # # Centralize and crop
+    # crop_img = cropped_image[int(h/2-min_size/2):int(h/2+min_size/2), int(w/2-min_size/2):int(w/2+min_size/2)]
+    resized_img = cv2.resize(cropped_image, (512, 512), interpolation=cv2.INTER_AREA)
 
     # Save the resized image as PNG
     #upload name remove extension
@@ -193,18 +189,18 @@ def initModelTraining(transactionID,uploadID,images,DBConnection):
     myresult = mycursor.fetchall()
     train_model_id = myresult[0][0]
     mycursor.close()
-    classType = "will smith"
+    classType = "man"
     training_type ="men"
     if train_type == "Female":
          training_type ="female"
-         classType = "rihanna"
+         classType = "woman"
 
 
     #prepare json to send to model training
     payload ={
     "key": "{}".format(os.getenv('model_training_key')),
     "instance_prompt": "sks",
-    "class_prompt" : "a photo of {}".format(classType),
+    "class_prompt" : "a photo of a {}".format(classType),
     "base_model_id" : "dream-shaper-8797",
     "images": images,
     "seed": "0",
